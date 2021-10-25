@@ -1,17 +1,19 @@
-// SPDX-License-Identifier: MIT
-pragma solidity ^0.8.9;
+pragma solidity ^0.5.6;
 
-import "@openzeppelin/contracts/access/Ownable.sol";
-import "./FungibleToken.sol";
-import "./interfaces/IPolygonMix.sol";
+import "./klaytn-contracts/ownership/Ownable.sol";
+import "./interfaces/IMixSender.sol";
+import "./interfaces/IMix.sol";
 
-contract PolygonMix is Ownable, FungibleToken, IPolygonMix {
+contract MixSender is Ownable, IMixSender {
 
+    IMix public mix;
     address public signer;
+
     mapping(address => mapping(uint256 => uint256[])) public sended;
     mapping(address => mapping(uint256 => mapping(uint256 => bool))) public received;
 
-    constructor(address _signer) FungibleToken("Polygon Mix", "PMIX", "1") {
+    constructor(IMix _mix, address _signer) public {
+        mix = _mix;
         signer = _signer;
     }
 
@@ -20,8 +22,8 @@ contract PolygonMix is Ownable, FungibleToken, IPolygonMix {
         emit SetSigner(_signer);
     }
 
-    function sendOverHorizon(uint256 toChain, uint256 amount) public override returns (uint256) {
-        _burn(msg.sender, amount);
+    function sendOverHorizon(uint256 toChain, uint256 amount) public returns (uint256) {
+        mix.transferFrom(msg.sender, address(this), amount);
         
         uint256[] storage sendedAmounts = sended[msg.sender][toChain];
         uint256 sendId = sendedAmounts.length;
@@ -31,11 +33,11 @@ contract PolygonMix is Ownable, FungibleToken, IPolygonMix {
         return sendId;
     }
 
-    function sendCount(address sender, uint256 toChain) external view override returns (uint256) {
+    function sendCount(address sender, uint256 toChain) external view returns (uint256) {
         return sended[sender][toChain].length;
     }
 
-    function receiveOverHorizon(uint256 fromChain, uint256 sendId, uint256 amount, bytes memory signature) public override {
+    function receiveOverHorizon(uint256 fromChain, uint256 sendId, uint256 amount, bytes memory signature) public {
         require(signature.length == 65, "invalid signature length");
         require(received[msg.sender][fromChain][sendId] != true);
 
@@ -59,7 +61,7 @@ contract PolygonMix is Ownable, FungibleToken, IPolygonMix {
 
         require(ecrecover(hash, v, r, s) == signer);
 
-        _mint(msg.sender, amount);
+        mix.transfer(msg.sender, amount);
 
         received[msg.sender][fromChain][sendId] = true;
         emit ReceiveOverHorizon(msg.sender, amount);

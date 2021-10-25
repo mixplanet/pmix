@@ -1,9 +1,6 @@
-// SPDX-License-Identifier: MIT
-pragma solidity ^0.8.9;
+pragma solidity ^0.5.6;
 
-import "./IFungibleToken.sol";
-
-interface IPolygonMix is IFungibleToken {
+interface IMixSender {
 
     event SetSigner(address indexed signer);
     event SendOverHorizon(address indexed sender, uint256 amount);
