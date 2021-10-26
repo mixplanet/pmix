@@ -68,6 +68,6 @@ contract MixSender is Ownable, IMixSender {
         mix.transfer(msg.sender, amount);
 
         received[msg.sender][fromChain][sender][sendId] = true;
-        emit ReceiveOverHorizon(msg.sender, fromChain, sender, amount);
+        emit ReceiveOverHorizon(msg.sender, fromChain, sender, sendId, amount);
     }
 }
