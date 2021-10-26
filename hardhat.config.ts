@@ -28,7 +28,7 @@ const config: HardhatUserConfig = {
     polygon: {
       url: "https://polygon-rpc.com/",
       accounts: [process.env.ADMIN || ''],
-      chainId: 4,
+      chainId: 137,
     },
   },
   etherscan: {
