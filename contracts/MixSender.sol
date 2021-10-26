@@ -40,12 +40,12 @@ contract MixSender is Ownable, IMixSender {
     function receiveOverHorizon(uint256 fromChain, uint256 toChain, address sender, uint256 sendId, uint256 amount, bytes memory signature) public {
 
         require(signature.length == 65, "invalid signature length");
-        require(received[msg.sender][fromChain][sender][sendId] != true);
+        require(!received[msg.sender][fromChain][sender][sendId]);
 
         require(toChain == 8217);
 
         bytes32 hash = keccak256(abi.encodePacked(msg.sender, fromChain, toChain, sender, sendId, amount));
-        hash = keccak256(abi.encodePacked("\x19Ethereum Signed Message:\n32", hash));
+        bytes32 message = keccak256(abi.encodePacked("\x19Ethereum Signed Message:\n32", hash));
 
         bytes32 r;
         bytes32 s;
@@ -57,12 +57,13 @@ contract MixSender is Ownable, IMixSender {
             v := byte(0, mload(add(signature, 96)))
         }
 
-        if (v < 27) {
-            v += 27;
-        }
-        require(v == 27 || v == 28, "invalid signature version");
+        require(
+            uint256(s) <= 0x7FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF5D576E7357A4501DDFE92F46681B20A0,
+            "invalid signature 's' value"
+        );
+        require(v == 27 || v == 28, "invalid signature 'v' value");
 
-        require(ecrecover(hash, v, r, s) == signer);
+        require(ecrecover(message, v, r, s) == signer);
 
         mix.transfer(msg.sender, amount);
 
