@@ -41,8 +41,7 @@ contract PolygonMix is Ownable, FungibleToken, IPolygonMix {
         require(signature.length == 65, "invalid signature length");
         require(received[msg.sender][fromChain][sender][sendId] != true);
 
-        uint256 chainId; assembly { chainId := chainid() }
-        require(toChain == chainId);
+        require(toChain == block.chainid);
 
         bytes32 hash = keccak256(abi.encodePacked(msg.sender, fromChain, toChain, sender, sendId, amount));
         hash = keccak256(abi.encodePacked("\x19Ethereum Signed Message:\n32", hash));
