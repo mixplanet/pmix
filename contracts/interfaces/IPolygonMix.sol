@@ -13,6 +13,6 @@ interface IPolygonMix is IFungibleToken {
     function sendOverHorizon(uint256 toChain, address receiver, uint256 amount) external returns (uint256 sendId);
     function sended(address sender, uint256 toChain, address receiver, uint256 index) external view returns (uint256 amount);
     function sendCount(address sender, uint256 toChain, address receiver) external view returns (uint256);
-    function receiveOverHorizon(uint256 fromChain, address sender, uint256 sendId, uint256 amount, bytes calldata signature) external;
+    function receiveOverHorizon(uint256 fromChain, uint256 toChain, address sender, uint256 sendId, uint256 amount, bytes calldata signature) external;
     function received(address receiver, uint256 fromChain, address sender, uint256 sendId) external view returns (bool);
 }
