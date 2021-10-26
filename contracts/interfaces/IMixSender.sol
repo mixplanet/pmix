@@ -3,7 +3,7 @@ pragma solidity ^0.5.6;
 interface IMixSender {
 
     event SetSigner(address indexed signer);
-    event SendOverHorizon(address indexed sender, uint256 indexed toChain, address indexed receiver, uint256 amount);
+    event SendOverHorizon(address indexed sender, uint256 indexed toChain, address indexed receiver, uint256 sendId, uint256 amount);
     event ReceiveOverHorizon(address indexed receiver, uint256 indexed fromChain, address indexed sender, uint256 sendId, uint256 amount);
 
     function signer() external view returns (address);

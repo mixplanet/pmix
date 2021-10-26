@@ -29,7 +29,7 @@ contract MixSender is Ownable, IMixSender {
         uint256 sendId = sendedAmounts.length;
         sendedAmounts.push(amount);
         
-        emit SendOverHorizon(msg.sender, toChain, receiver, amount);
+        emit SendOverHorizon(msg.sender, toChain, receiver, sendId, amount);
         return sendId;
     }
 
