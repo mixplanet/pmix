@@ -8,8 +8,9 @@ import "./interfaces/IPolygonMix.sol";
 contract PolygonMix is Ownable, FungibleToken, IPolygonMix {
 
     address public signer;
-    mapping(address => mapping(uint256 => uint256[])) public sended;
-    mapping(address => mapping(uint256 => mapping(uint256 => bool))) public received;
+
+    mapping(address => mapping(uint256 => mapping(address => uint256[]))) public sended;
+    mapping(address => mapping(uint256 => mapping(address => mapping(uint256 => bool)))) public received;
 
     constructor(address _signer) FungibleToken("Polygon Mix", "PMIX", "1") {
         signer = _signer;
@@ -20,26 +21,26 @@ contract PolygonMix is Ownable, FungibleToken, IPolygonMix {
         emit SetSigner(_signer);
     }
 
-    function sendOverHorizon(uint256 toChain, uint256 amount) public override returns (uint256) {
+    function sendOverHorizon(uint256 toChain, address receiver, uint256 amount) public override returns (uint256) {
         _burn(msg.sender, amount);
         
-        uint256[] storage sendedAmounts = sended[msg.sender][toChain];
+        uint256[] storage sendedAmounts = sended[msg.sender][toChain][receiver];
         uint256 sendId = sendedAmounts.length;
         sendedAmounts.push(amount);
         
-        emit SendOverHorizon(msg.sender, amount);
+        emit SendOverHorizon(msg.sender, toChain, receiver, amount);
         return sendId;
     }
 
-    function sendCount(address sender, uint256 toChain) external view override returns (uint256) {
-        return sended[sender][toChain].length;
+    function sendCount(address sender, uint256 toChain, address receiver) external view override returns (uint256) {
+        return sended[sender][toChain][receiver].length;
     }
 
-    function receiveOverHorizon(uint256 fromChain, uint256 sendId, uint256 amount, bytes memory signature) public override {
+    function receiveOverHorizon(uint256 fromChain, address sender, uint256 sendId, uint256 amount, bytes memory signature) public override {
         require(signature.length == 65, "invalid signature length");
-        require(received[msg.sender][fromChain][sendId] != true);
+        require(received[msg.sender][fromChain][sender][sendId] != true);
 
-        bytes32 hash = keccak256(abi.encodePacked(msg.sender, fromChain, sendId, amount));
+        bytes32 hash = keccak256(abi.encodePacked(msg.sender, fromChain, sender, sendId, amount));
         hash = keccak256(abi.encodePacked("\x19Ethereum Signed Message:\n32", hash));
 
         bytes32 r;
@@ -61,7 +62,7 @@ contract PolygonMix is Ownable, FungibleToken, IPolygonMix {
 
         _mint(msg.sender, amount);
 
-        received[msg.sender][fromChain][sendId] = true;
-        emit ReceiveOverHorizon(msg.sender, amount);
+        received[msg.sender][fromChain][sender][sendId] = true;
+        emit ReceiveOverHorizon(msg.sender, fromChain, sender, amount);
     }
 }
