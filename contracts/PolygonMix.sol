@@ -67,6 +67,6 @@ contract PolygonMix is Ownable, FungibleToken, IPolygonMix {
         _mint(msg.sender, amount);
 
         received[msg.sender][fromChain][sender][sendId] = true;
-        emit ReceiveOverHorizon(msg.sender, fromChain, sender, amount);
+        emit ReceiveOverHorizon(msg.sender, fromChain, sender, sendId, amount);
     }
 }
