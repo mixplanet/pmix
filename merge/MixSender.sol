@@ -78,12 +78,12 @@ contract Ownable {
 interface IMixSender {
 
     event SetSigner(address indexed signer);
-    event SendOverHorizon(address indexed sender, uint256 indexed toChain, address indexed receiver, uint256 amount);
-    event ReceiveOverHorizon(address indexed receiver, uint256 indexed fromChain, address indexed sender, uint256 amount);
+    event SendOverHorizon(address indexed sender, uint256 indexed toChain, address indexed receiver, uint256 sendId, uint256 amount);
+    event ReceiveOverHorizon(address indexed receiver, uint256 indexed fromChain, address indexed sender, uint256 sendId, uint256 amount);
 
     function signer() external view returns (address);
     function sendOverHorizon(uint256 toChain, address receiver, uint256 amount) external returns (uint256 sendId);
-    function sended(address sender, uint256 toChain, address receiver, uint256 index) external view returns (uint256 amount);
+    function sended(address sender, uint256 toChain, address receiver, uint256 sendId) external view returns (uint256 amount);
     function sendCount(address sender, uint256 toChain, address receiver) external view returns (uint256);
     function receiveOverHorizon(uint256 fromChain, uint256 toChain, address sender, uint256 sendId, uint256 amount, bytes calldata signature) external;
     function received(address receiver, uint256 fromChain, address sender, uint256 sendId) external view returns (bool);
@@ -252,7 +252,7 @@ contract MixSender is Ownable, IMixSender {
         uint256 sendId = sendedAmounts.length;
         sendedAmounts.push(amount);
         
-        emit SendOverHorizon(msg.sender, toChain, receiver, amount);
+        emit SendOverHorizon(msg.sender, toChain, receiver, sendId, amount);
         return sendId;
     }
 
@@ -263,12 +263,12 @@ contract MixSender is Ownable, IMixSender {
     function receiveOverHorizon(uint256 fromChain, uint256 toChain, address sender, uint256 sendId, uint256 amount, bytes memory signature) public {
 
         require(signature.length == 65, "invalid signature length");
-        require(received[msg.sender][fromChain][sender][sendId] != true);
+        require(!received[msg.sender][fromChain][sender][sendId]);
 
         require(toChain == 8217);
 
         bytes32 hash = keccak256(abi.encodePacked(msg.sender, fromChain, toChain, sender, sendId, amount));
-        hash = keccak256(abi.encodePacked("\x19Ethereum Signed Message:\n32", hash));
+        bytes32 message = keccak256(abi.encodePacked("\x19Ethereum Signed Message:\n32", hash));
 
         bytes32 r;
         bytes32 s;
@@ -280,16 +280,17 @@ contract MixSender is Ownable, IMixSender {
             v := byte(0, mload(add(signature, 96)))
         }
 
-        if (v < 27) {
-            v += 27;
-        }
-        require(v == 27 || v == 28, "invalid signature version");
+        require(
+            uint256(s) <= 0x7FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF5D576E7357A4501DDFE92F46681B20A0,
+            "invalid signature 's' value"
+        );
+        require(v == 27 || v == 28, "invalid signature 'v' value");
 
-        require(ecrecover(hash, v, r, s) == signer);
+        require(ecrecover(message, v, r, s) == signer);
 
         mix.transfer(msg.sender, amount);
 
         received[msg.sender][fromChain][sender][sendId] = true;
-        emit ReceiveOverHorizon(msg.sender, fromChain, sender, amount);
+        emit ReceiveOverHorizon(msg.sender, fromChain, sender, sendId, amount);
     }
 }
